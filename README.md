@@ -11,4 +11,4 @@ This project is useful because it provides an integration for a popular local sh
 
 ## How do I get started?
 * To start contributing to this project, fork the repo and create a feature branch with a relevant name for an issue you would like to contribute to.
-> To use the install and use the plugin on your WooCommerce website, navigate to the [releases page]([url](https://github.com/Mwansasquared/wp-mercury-shipping-plugin/releases)) and download the zip file.
+* To install and use the plugin on your WooCommerce website, navigate to the [release pages](https://github.com/Mwansasquared/wp-mercury-shipping-plugin/releases) and download the zip file.
