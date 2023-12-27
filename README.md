@@ -10,5 +10,5 @@ This is a WordPress plugin that sends information to calculate the shipping fee 
 This project is useful because it provides an integration for a popular local shipping courier that local e-commerce (WooCommerce) business owners can make use of.
 
 ## How do I get started?
-> To start contributing to this project, fork the repo and create a feature branch with a relevant name for an issue you would like to contribute to.
-> To use the install and use the plugin on your WooCommerce website, navigate to the releases page and download the zip file.
+* To start contributing to this project, fork the repo and create a feature branch with a relevant name for an issue you would like to contribute to.
+> To use the install and use the plugin on your WooCommerce website, navigate to the [releases page]([url](https://github.com/Mwansasquared/wp-mercury-shipping-plugin/releases)) and download the zip file.
