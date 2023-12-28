@@ -15,4 +15,4 @@ This project is useful because it provides an integration for a popular local sh
 
   
 ## More Resources
-Read further documentation [here](https://github.com/woocommerce/woocommerce/blob/trunk/docs/shipping/shipping-method-api.md) on the WooCommerce Shipping Method API.
+Read further documentation on the [WooCommerce Shipping Method API](https://github.com/woocommerce/woocommerce/blob/trunk/docs/shipping/shipping-method-api.md) for more context.
