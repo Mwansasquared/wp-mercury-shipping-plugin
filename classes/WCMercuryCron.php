@@ -2,6 +2,8 @@
 
 class WCMercuryCron extends WC_MERCURY_SHIPPING {
 
+    $get_countries_api_url = $_ENV['GET_COUNTRIES_URL'];
+
     if (get_option( 'wp_mercury_api_info' ) === false) {
         
         $info_mercury_api = get_country_state_city();
@@ -22,7 +24,7 @@ class WCMercuryCron extends WC_MERCURY_SHIPPING {
     save_database_table_info();
 
     function get_country_state_city() {
-        $url = 'http://116.202.29.37/quotation1/app/getcountrystatecity';
+        
         $args = array (
             'header' => array(
                 'Content-Type' => 'application/json'
@@ -30,7 +32,7 @@ class WCMercuryCron extends WC_MERCURY_SHIPPING {
             'body' => array()
         );
     
-        $response = wp_remote_get($url, $args);
+        $response = wp_remote_get($get_countries_api_url, $args);
         $body = json_decode($response['body'], true);
     
         $response_message = $body['message'];

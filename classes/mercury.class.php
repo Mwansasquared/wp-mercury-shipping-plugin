@@ -6,6 +6,7 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
     $private_key = $_ENV['PRIVATE_KEY'];
     $domestic_service = $_ENV['DOMESTIC_SERVICE'];
     $international_service = $_ENV['INTERNATIONAL_SERVICE'];
+    $get_freight_api_url = $_ENV['GET_FREIGHT_URL'];
 
     public function __construct() {
         $this->id                 = 'mercury_logistics_shipping'; 
@@ -104,10 +105,9 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
 
         $shipmentData = json_encode($product_data);
 
-        // Call external API
-        $api_url = 'http://116.202.29.37/quotation1/app/getfreight';
+        
 
-        $api_url_string = $api_url.'?email='.$email.'&private_key='.$private_key.'&domestic_service='.$domestic_service.'&international_service='.$international_service.'&shipment='.$shipmentData;
+        $api_url_string = $get_freight_api_url.'?email='.$email.'&private_key='.$private_key.'&domestic_service='.$domestic_service.'&international_service='.$international_service.'&shipment='.$shipmentData;
 
         $response = wp_remote_get($api_url_string);
 
