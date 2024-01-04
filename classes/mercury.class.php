@@ -2,6 +2,11 @@
 
 class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
 
+    $api_url = $_ENV['GET_FREIGHT_API_URL'];
+    $email = $_ENV['EMAIL'];
+    $private_key = $_ENV['PRIVATE_KEY'];
+    $domestic_service = $_ENV['DOMESTIC_SERVICE'];
+    $international_service = $_ENV['INTERNATIONAL_SERVICE'];
 
     public function __construct() {
         $this->id                 = 'mercury_logistics_shipping'; 
@@ -50,7 +55,6 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
 
     public function calculate_shipping( $package ) {
             
-        //returns more than one entry of the same country code and city name
         $selected_country_code = $_POST['country']; 
         $selected_city_name = $_POST['city'];
 
@@ -61,8 +65,6 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
         $mercury_countries = $this->get_countries_from_database();      
         $mercury_cities = $this->get_cities_from_database();
         
-
-        // var_dump($selected_city_name);
 
         if (!empty($selected_country_code)) {
            
@@ -127,11 +129,6 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
         $vendor_id = 0;
         $insurance = 1;
 
-        $email = 'sumit@inerun.com';
-        $private_key = '$ARtdDYJRDMKhs';
-        $domestic_service = 1;
-        $international_service = 4;
-
 
         foreach ($cart_items as $cart_item_key => $cart_item) {
             $product_id = $cart_item['product_id'];
@@ -156,8 +153,6 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
 
         $shipmentData = json_encode($product_data);
 
-        // Call external API
-        $api_url = 'http://116.202.29.37/quotation1/app/getfreight';
 
         $api_url_string = $api_url.'?email='.$email.'&private_key='.$private_key.'&domestic_service='.$domestic_service.'&international_service='.$international_service.'&shipment='.$shipmentData;
 
@@ -189,8 +184,6 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
         global $wpdb;
     
         $countries_table = $wpdb->prefix . 'countries_wp_table_version';
-    
-        // $countries = $wpdb->get_results("SELECT * FROM $countries_table");
     
         $countries = $wpdb->get_results("SELECT * FROM $countries_table ORDER BY country_name");
     
