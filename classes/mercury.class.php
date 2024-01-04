@@ -2,11 +2,6 @@
 
 class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
 
-    $email = $_ENV['EMAIL'];
-    $private_key = $_ENV['PRIVATE_KEY'];
-    $domestic_service = $_ENV['DOMESTIC_SERVICE'];
-    $international_service = $_ENV['INTERNATIONAL_SERVICE'];
-    $get_freight_api_url = $_ENV['GET_FREIGHT_URL'];
 
     public function __construct() {
         $this->id                 = 'mercury_logistics_shipping'; 
@@ -15,14 +10,15 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
 
         $this->enabled            = "yes"; 
         $this->title              = "Mercury Shipping";
+        $this->enabled = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'yes';
+        $this->title = isset( $this->settings['title'] ) ? $this->settings['title'] : __( 'Mercury Shipping', 'mercury_logistics_shipping' );
+        
 
         $this->init();
 
-        add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
-
     }
 
-    public function init() {
+    function init() {
         // Load the settings API
         $this->init_form_fields(); 
         $this->init_settings(); 
@@ -30,35 +26,86 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
         // Save settings in admin
         add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
 
-        add_action('wp_ajax_get_mercury_shipping_fee', array($this, 'calculate_mercury_shipping_fee'));
-        add_action('wp_ajax_nopriv_ajax_get_mercury_shipping_fee', array($this, 'ajax_get_mercury_shipping_fee'));
-
-    }
-
-    public function enqueue_scripts() {
-    
-        wp_enqueue_script('custom-location-scrip', plugin_dir_url(__FILE__) . 'custom-location-script.js', array('jquery'), null, true);
-
         
-        wp_localize_script('custom-location-script', 'custom_location_data', array(
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('custom_location_data_nonce'),
-            'countries' => $countries,
-        ));
+
     }
 
+    function init_form_fields() {
+
+        $this->form_fields = array(
+         'enabled' => array(
+              'title' => __( 'Enable', 'mercury_logistics_shipping' ),
+              'type' => 'checkbox',
+              'description' => __( 'Enable this shipping.', 'mercury_logistics_shipping' ),
+              'default' => 'yes'
+              ),
+         'title' => array(
+            'title' => __( 'Title', 'mercury_logistics_shipping' ),
+              'type' => 'text',
+              'description' => __( 'Title to be display on site', 'mercury_logistics_shipping' ),
+              'default' => __( 'Mercury Shipping', 'mercury_logistics_shipping' )
+              ),
+         );
+    }
 
     public function calculate_shipping( $package ) {
+            
+        //returns more than one entry of the same country code and city name
+        $selected_country_code = $_POST['country']; 
+        $selected_city_name = $_POST['city'];
+
+        $wc_countries_class = new WC_Countries(); 
+        $wc_countries = $wc_countries_class->get_countries();
+        
+        
+        $mercury_countries = $this->get_countries_from_database();      
+        $mercury_cities = $this->get_cities_from_database();
+        
+
+        // var_dump($selected_city_name);
+
+        if (!empty($selected_country_code)) {
+           
+            $selected_country_name = $wc_countries[$selected_country_code];
+
+            $matchingCountry = array_filter($mercury_countries, function ($mercury_country) use ($selected_country_name) {
+                return $mercury_country->country_name === $selected_country_name;
+            });
+
+            if (!empty($matchingCountry)) {
+        
+                foreach ($matchingCountry as $item) {
+                    $mercury_selected_country_id = $item->country_id;
+                    
+                    break;
+                }
+            }
+
+            $matchingCity = array_filter($mercury_cities, function ($mercury_city) use ($selected_city_name) {
+                return $mercury_city->city_name === $selected_city_name;
+            });
 
 
-        $response = $this->setMercuryShippingFee();
+            if (!empty($matchingCity)) {
+        
+                foreach ($matchingCity as $item) {
+                    $mercury_selected_city_id = $item->city_id;
+                    
+                    break;
+                }
+            }
+        
+        } else {
+            
+            echo "Country not found!";
+        }
 
-        echo'Shipping response in calculate_shipping::'. $response;
+        $shipping_fee = $this->calculate_mercury_shipping_fee($mercury_selected_country_id, $mercury_selected_city_id);
+
 
         $rate = array(
-            'id'       => $this->id,
             'label'    => $this->title,
-            'cost'     =>  73.20,
+            'cost'     => $shipping_fee,
             'calc_tax' => 'per_item',
         );
 
@@ -67,12 +114,11 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
         
     }
 
-    public function calculate_mercury_shipping_fee($country_id, $city_id) {
-
+    public function calculate_mercury_shipping_fee($mercury_selected_country_id, $mercury_selected_city_id) {
 
         global $woocommerce;
 
-      
+        // Retrieve product details from the cart
         $cart_items = $woocommerce->cart->get_cart();
         $product_data = array();
 
@@ -80,6 +126,11 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
         $source_city = 1; //Lusaka
         $vendor_id = 0;
         $insurance = 1;
+
+        $email = 'sumit@inerun.com';
+        $private_key = '$ARtdDYJRDMKhs';
+        $domestic_service = 1;
+        $international_service = 4;
 
 
         foreach ($cart_items as $cart_item_key => $cart_item) {
@@ -91,8 +142,8 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
                 'vendor_id' => 0,
                 'source_country' => $source_country,
                 'source_city' => $source_city,
-                'destination_country' => $country_id,
-                'destination_city' => $city_id,
+                'destination_country' => $mercury_selected_country_id,
+                'destination_city' => $mercury_selected_city_id,
                 'insurance' => 1,
                 'length'  => $product->get_length(),
                 'width'   => $product->get_width(),
@@ -105,9 +156,10 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
 
         $shipmentData = json_encode($product_data);
 
-        
+        // Call external API
+        $api_url = 'http://116.202.29.37/quotation1/app/getfreight';
 
-        $api_url_string = $get_freight_api_url.'?email='.$email.'&private_key='.$private_key.'&domestic_service='.$domestic_service.'&international_service='.$international_service.'&shipment='.$shipmentData;
+        $api_url_string = $api_url.'?email='.$email.'&private_key='.$private_key.'&domestic_service='.$domestic_service.'&international_service='.$international_service.'&shipment='.$shipmentData;
 
         $response = wp_remote_get($api_url_string);
 
@@ -122,31 +174,44 @@ class WC_MERCURY_SHIPPING extends WC_Shipping_Method {
             $mercury_shipping_fee = $api_result['rate'];
 
             // wp_send_json_success($mercury_shipping_fee);
+            
 
             return $mercury_shipping_fee;
         }
 
+        
         return 0;
 
     }
 
 
-    public function ajax_get_mercury_shipping_fee() {
-
-        check_ajax_referer('custom_location_data_nonce', 'nonce');
-
-        $country_id = $_POST['country_id'];
-        $city_id = $_POST['city_id'];
-
-        $package = array();
-
-        
-        $shipping_fee = calculate_mercury_shipping_fee( $country_id, $city_id);
-
-        wp_send_json_success($shipping_fee);
+    public function get_countries_from_database() {
+        global $wpdb;
     
+        $countries_table = $wpdb->prefix . 'countries_wp_table_version';
+    
+        // $countries = $wpdb->get_results("SELECT * FROM $countries_table");
+    
+        $countries = $wpdb->get_results("SELECT * FROM $countries_table ORDER BY country_name");
+    
+        return $countries;
     }
 
 
+   
+    public function get_cities_from_database() {
+
+        global $wpdb;
+
+
+        $cities_table = $wpdb->prefix . 'cities_wp_table_version';
+
+        $cities = $wpdb->get_results("SELECT * FROM $cities_table");
+
+        return $cities;
+    }
+
 
 }
+
+
